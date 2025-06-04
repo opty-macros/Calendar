@@ -20,6 +20,7 @@ import com.kizitonwose.calendar.compose.heatmapcalendar.HeatMapWeek
 import com.kizitonwose.calendar.compose.heatmapcalendar.HeatMapWeekHeaderPosition
 import com.kizitonwose.calendar.compose.heatmapcalendar.rememberHeatMapCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarImpl
+import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarSizeAdaptive
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import com.kizitonwose.calendar.compose.yearcalendar.YearCalendarMonths
@@ -255,6 +256,52 @@ public fun WeekCalendar(
     weekHeader: (@Composable ColumnScope.(Week) -> Unit)? = null,
     weekFooter: (@Composable ColumnScope.(Week) -> Unit)? = null,
 ): Unit = WeekCalendarImpl(
+    modifier = modifier,
+    state = state,
+    calendarScrollPaged = calendarScrollPaged,
+    userScrollEnabled = userScrollEnabled,
+    reverseLayout = reverseLayout,
+    dayContent = dayContent,
+    weekHeader = weekHeader,
+    weekFooter = weekFooter,
+    contentPadding = contentPadding,
+    onItemPlaced = state.placementInfo::onItemPlaced,
+)
+
+/**
+ * A horizontally scrolling week calendar.
+ *
+ * @param modifier the modifier to apply to this calendar.
+ * @param state the state object to be used to control or observe the calendar's properties.
+ * Examples: `startDate`, `endDate`, `firstDayOfWeek`, `firstVisibleWeek`.
+ * @param calendarScrollPaged the scrolling behavior of the calendar. When `true`, the calendar will
+ * snap to the nearest week after a scroll or swipe action. When `false`, the calendar scrolls normally.
+ * Note that when `false`, you should set the desired day width on the [dayContent] composable.
+ * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions
+ * is allowed. You can still scroll programmatically using the state even when it is disabled.
+ * @param reverseLayout reverse the direction of scrolling and layout. When `true`, weeks will be
+ * composed from the end to the start and [WeekCalendarState.startDate] will be located at the end.
+ * @param contentPadding a padding around the whole calendar. This will add padding for the
+ * content after it has been clipped, which is not possible via [modifier] param. You can use it
+ * to add a padding before the first week or after the last one.
+ * @param dayContent a composable block which describes the day content.
+ * @param weekHeader a composable block which describes the week header content. The header is
+ * placed above each week on the calendar.
+ * @param weekFooter a composable block which describes the week footer content. The footer is
+ * placed below each week on the calendar.
+ */
+@Composable
+public fun WeekCalendarSizeAdaptive(
+    modifier: Modifier = Modifier,
+    state: WeekCalendarState = rememberWeekCalendarState(),
+    calendarScrollPaged: Boolean = true,
+    userScrollEnabled: Boolean = true,
+    reverseLayout: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    dayContent: @Composable BoxScope.(WeekDay) -> Unit,
+    weekHeader: (@Composable ColumnScope.(Week) -> Unit)? = null,
+    weekFooter: (@Composable ColumnScope.(Week) -> Unit)? = null,
+): Unit = WeekCalendarSizeAdaptive(
     modifier = modifier,
     state = state,
     calendarScrollPaged = calendarScrollPaged,
