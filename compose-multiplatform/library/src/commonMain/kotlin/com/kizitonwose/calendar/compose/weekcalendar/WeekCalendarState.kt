@@ -88,7 +88,7 @@ public fun rememberWeekCalendarState(
  * @param firstVisibleWeekDate the date which will have its week visible initially.
  */
 @Stable
-public class WeekCalendarState internal constructor(
+public class WeekCalendarState(
     startDate: LocalDate,
     endDate: LocalDate,
     firstVisibleWeekDate: LocalDate,
@@ -344,7 +344,7 @@ public class WeekCalendarState internal constructor(
     }
 
     public companion object {
-        internal val Saver: Saver<WeekCalendarState, Any> = listSaver(
+        public val Saver: Saver<WeekCalendarState, Any> = listSaver(
             save = {
                 listOf(
                     it.startDate.toIso8601String(),
