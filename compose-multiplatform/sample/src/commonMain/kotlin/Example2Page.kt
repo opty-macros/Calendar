@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
@@ -134,7 +135,7 @@ private fun Day(
     var textColor = Color.Transparent
     Box(
         modifier = Modifier
-            .aspectRatio(1f) // This is important for square-sizing!
+            .size(56.dp) // This is important for square-sizing!
             .clickable(
                 enabled = day.position == DayPosition.MonthDate && day.date >= today,
                 showRipple = false,

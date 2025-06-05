@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -13,10 +12,9 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onPlaced
 import com.kizitonwose.calendar.core.CalendarDay
@@ -34,93 +32,105 @@ internal fun LazyListScope.CalendarMonths(
     monthFooter: (@Composable ColumnScope.(CalendarMonth) -> Unit)?,
     monthContainer: (@Composable LazyItemScope.(CalendarMonth, container: @Composable () -> Unit) -> Unit)?,
     onItemPlaced: (itemCoordinates: ItemCoordinates) -> Unit,
-) {
+) { 
     items(
         count = monthCount,
         key = { offset -> monthData(offset).yearMonth.toIso8601String() },
     ) { offset ->
         val month = monthData(offset)
-        val fillHeight = when (contentHeightMode) {
-            ContentHeightMode.Wrap -> false
-            ContentHeightMode.Fill -> true
-        }
-        val hasMonthContainer = monthContainer != null
+        val fillHeight = contentHeightMode == ContentHeightMode.Fill
         val currentOnItemPlaced by rememberUpdatedState(onItemPlaced)
-        val itemCoordinatesStore = remember(month.yearMonth) {
-            ItemCoordinatesStore(currentOnItemPlaced)
-        }
-        Box(Modifier.onPlaced(itemCoordinatesStore::onItemRootPlaced)) {
-            monthContainer.or(defaultMonthContainer)(month) {
-                Column(
-                    modifier = Modifier
-                        .then(
-                            if (hasMonthContainer) {
-                                Modifier.fillMaxWidth()
-                            } else {
-                                Modifier.fillParentMaxWidth()
-                            },
-                        )
-                        .then(
-                            if (fillHeight) {
-                                if (hasMonthContainer) {
-                                    Modifier.fillMaxHeight()
-                                } else {
-                                    Modifier.fillParentMaxHeight()
-                                }
-                            } else {
-                                Modifier.wrapContentHeight()
-                            },
-                        ),
-                ) {
-                    monthHeader?.invoke(this, month)
-                    monthBody.or(defaultMonthBody)(month) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(
-                                    if (fillHeight) {
-                                        Modifier.weight(1f)
-                                    } else {
-                                        Modifier.wrapContentHeight()
-                                    },
-                                ),
-                        ) {
-                            for ((row, week) in month.weekDays.withIndex()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .then(
-                                            if (fillHeight) {
-                                                Modifier.weight(1f)
-                                            } else {
-                                                Modifier.wrapContentHeight()
-                                            },
-                                        ),
-                                ) {
-                                    for ((column, day) in week.withIndex()) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clipToBounds()
-                                                .onFirstDayPlaced(
-                                                    dateRow = row,
-                                                    dateColumn = column,
-                                                    onFirstDayPlaced = itemCoordinatesStore::onFirstDayPlaced,
-                                                ),
-                                        ) {
-                                            dayContent(day)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    monthFooter?.invoke(this, month)
+
+        monthContainer.or(defaultMonthContainer)(month) {
+            var itemRootCoordinates: LayoutCoordinates? = null
+            var firstDayCoordinates: LayoutCoordinates? = null
+
+            fun notifyIfReady() {
+                val root = itemRootCoordinates
+                val firstDay = firstDayCoordinates
+                if (root != null && firstDay != null) {
+                    currentOnItemPlaced(ItemCoordinates(root, firstDay))
                 }
+            }
+
+            Column(
+                modifier = Modifier
+                    .onPlaced {
+                        itemRootCoordinates = it
+                        notifyIfReady()
+                    }
+                    .fillMaxWidth()
+                    .then(if (fillHeight) Modifier.fillMaxHeight() else Modifier.wrapContentHeight())
+            ) {
+                monthHeader?.invoke(this, month)
+                monthBody.or(defaultMonthBody)(month) {
+                    MonthGrid(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (fillHeight) Modifier.weight(1f) else Modifier.wrapContentHeight()),
+                        month = month,
+                        dayContent = dayContent,
+                        onFirstDayPlaced = {
+                            firstDayCoordinates = it
+                            notifyIfReady()
+                        }
+                    )
+                }
+                monthFooter?.invoke(this, month)
             }
         }
     }
 }
+
+@Composable
+private fun MonthGrid(
+    modifier: Modifier = Modifier,
+    month: CalendarMonth,
+    dayContent: @Composable BoxScope.(CalendarDay) -> Unit,
+    onFirstDayPlaced: (LayoutCoordinates) -> Unit,
+) {
+    val weeks = month.weekDays
+    val onFirstDayPlacedCallback by rememberUpdatedState(onFirstDayPlaced)
+    val dayCountInWeek = 7
+    val weekCount = weeks.size
+
+    Layout(
+        modifier = modifier,
+        content = {
+            for ((index, day) in weeks.flatten().withIndex()) {
+                if (index == 0) {
+                    Box(Modifier.onPlaced { onFirstDayPlacedCallback(it) }) {
+                        dayContent(day)
+                    }
+                } else {
+                    Box {
+                        dayContent(day)
+                    }
+                }
+            }
+        },
+    ) { measurables, constraints ->
+        val cellWidth = constraints.maxWidth / dayCountInWeek
+        val cellHeight = when {
+            constraints.hasBoundedHeight -> constraints.maxHeight / weekCount
+            else -> measurables.firstOrNull()?.minIntrinsicHeight(cellWidth) ?: 0
+        }
+
+        val placeables = measurables.map { measurable ->
+            measurable.measure(constraints.copy(minWidth = cellWidth, maxWidth = cellWidth))
+        }
+
+        layout(constraints.maxWidth, cellHeight * weekCount) {
+            placeables.forEachIndexed { index, placeable ->
+                placeable.place(
+                    x = (index % dayCountInWeek) * cellWidth,
+                    y = (index / dayCountInWeek) * cellHeight
+                )
+            }
+        }
+    }
+}
+
 
 @Stable
 internal class ItemCoordinatesStore(
@@ -166,4 +176,6 @@ private val defaultMonthContainer: (@Composable LazyItemScope.(CalendarMonth, co
 private val defaultMonthBody: (@Composable ColumnScope.(CalendarMonth, content: @Composable () -> Unit) -> Unit) =
     { _, content -> content() }
 
+@Suppress("NOTHING_TO_INLINE")
 internal inline fun <T> T?.or(default: T) = this ?: default
+
