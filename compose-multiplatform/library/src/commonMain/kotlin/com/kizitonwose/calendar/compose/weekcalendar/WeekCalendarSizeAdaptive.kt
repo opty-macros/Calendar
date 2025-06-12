@@ -45,6 +45,7 @@ internal fun WeekCalendarSizeAdaptive(
         userScrollEnabled = userScrollEnabled,
         reverseLayout = reverseLayout,
         contentPadding = contentPadding,
+        overscrollEffect = null
     ) {
         items(
             count = state.weekIndexCount,
