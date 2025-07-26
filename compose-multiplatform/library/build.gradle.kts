@@ -125,3 +125,16 @@ android {
 mavenPublishing {
     coordinates(version = Version.multiplatfrom)
 }
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/${System.getenv("GH_GITHUB_ORGANIZATION")}/Calendar")
+            credentials {
+                username = System.getenv("GH_PACKAGES_USERNAME")
+                password = System.getenv("GH_PACKAGES_TOKEN")
+            }
+        }
+    }
+}
