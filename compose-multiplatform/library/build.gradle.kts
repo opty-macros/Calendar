@@ -22,6 +22,10 @@ kotlin {
         binaries.library()
     }
 
+    js(IR) {
+        browser()
+    }
+
     androidTarget {
         publishLibraryVariants("release")
     }
@@ -43,6 +47,7 @@ kotlin {
 
     sourceSets {
         val commonMain by getting
+        val jsMain by getting
         val wasmJsMain by getting
         val nativeMain by getting
         val desktopMain by getting
@@ -61,14 +66,20 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.annotation)
-            compileOnly(libs.kotlinx.serialization.core)
+            implementation(libs.kotlinx.serialization.core)
             api(libs.kotlinx.datetime)
+        }
+
+        val webMain by creating {
+            dependsOn(commonMain)
+            jsMain.dependsOn(this)
+            wasmJsMain.dependsOn(this)
         }
 
         val nonJvmMain by creating {
             dependsOn(commonMain)
             nativeMain.dependsOn(this)
-            wasmJsMain.dependsOn(this)
+            webMain.dependsOn(this)
             dependencies {
                 api(libs.kotlinx.serialization.core)
             }
@@ -113,6 +124,9 @@ android {
         jvmToolchain {
             languageVersion.set(Config.compatibleJavaLanguageVersion)
         }
+        compilerOptions {
+            optIn.add("kotlin.time.ExperimentalTime")
+        }
     }
     buildFeatures {
         compose = true
@@ -123,7 +137,7 @@ android {
 }
 
 mavenPublishing {
-    coordinates(version = Version.multiplatfrom)
+    coordinates(version = Version.multiplatform)
 }
 
 publishing {
