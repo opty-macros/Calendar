@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onPlaced
@@ -33,6 +34,7 @@ internal fun WeekCalendarSizeAdaptive(
     userScrollEnabled: Boolean,
     reverseLayout: Boolean,
     contentPadding: PaddingValues,
+    dayRowHorizontalArrangement: Arrangement.Horizontal,
     dayContent: @Composable BoxScope.(WeekDay) -> Unit,
     weekHeader: (@Composable ColumnScope.(Week) -> Unit)? = null,
     weekFooter: (@Composable ColumnScope.(Week) -> Unit)? = null,
@@ -69,7 +71,7 @@ internal fun WeekCalendarSizeAdaptive(
             ) {
                 weekHeader?.invoke(this, week)
                 Row(
-                    horizontalArrangement = Arrangement.SpaceAround,
+                    horizontalArrangement = dayRowHorizontalArrangement,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     for ((column, day) in week.days.withIndex()) {

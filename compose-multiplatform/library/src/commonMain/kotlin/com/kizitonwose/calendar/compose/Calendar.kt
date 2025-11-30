@@ -1,6 +1,7 @@
 package com.kizitonwose.calendar.compose
 
 import androidx.annotation.IntRange
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -292,6 +293,7 @@ public fun WeekCalendar(
  */
 @Composable
 public fun WeekCalendarSizeAdaptive(
+    dayRowHorizontalArrangement: Arrangement.Horizontal,
     modifier: Modifier = Modifier,
     state: WeekCalendarState = rememberWeekCalendarState(),
     calendarScrollPaged: Boolean = true,
@@ -312,6 +314,7 @@ public fun WeekCalendarSizeAdaptive(
     weekFooter = weekFooter,
     contentPadding = contentPadding,
     onItemPlaced = state.placementInfo::onItemPlaced,
+    dayRowHorizontalArrangement = dayRowHorizontalArrangement
 )
 
 /**
